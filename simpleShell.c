@@ -16,40 +16,93 @@ char** readLineOfWords();
 
 int main()
 {
-  while(1){
-    printf("enter a shell command (e.g. ls): ");
-    fflush(stdout);
-    char** words = readLineOfWords();
+    //int EOF = 0;
+    //printf(EOF);
+    int c;
+  
+while (1)
+{
+        printf("\nenter a shell command (e.g. ls): ");
 
-    // prints the tokens in the array separated by spaces
-    int i=0; 
-    printf("\nyou entered: ");
-    while (words[i] != NULL) {
-     printf("%s ", words[i++]);
+        fflush(stdout);
+        char** words = readLineOfWords();
+        int invalidEntry = 0;
+        int j = 0;
+        while(words[j] != NULL){
+            // if(words[j] == "-1"){
+            //     EOF = -1;
+            //     break;
+            // }
+            for(int k = 0; k < strlen(words[j]); k++){
+                int ascii = words[j][k];
+                if(!((ascii>=65 && ascii<=90) || (ascii>=97 && ascii<=122) || ascii==95 || (ascii>=45 && ascii<=57))){
+                    //printf("Invalid Entry");
+                    invalidEntry = 1;
+                    break;
+                }
+            }
+            if(invalidEntry==1){
+                printf("\nInvalid entry. Please try again.\n");
+                break;
+            }
+            j++;
+        }
+        if(invalidEntry==0){
+            int outRedirect=0;
+            int inRedirect=0;
+            int pipe = 0;
+            int ampersand = 0;
+
+            // prints the tokens in the array separated by spaces
+            int i=0; 
+            printf("\nyou entered: ");
+            while (words[i] != NULL) {
+                if(strcmp(words[i],">") == 0 && words[i+1] != NULL){
+                    outRedirect = 1;
+                }
+                if(strcmp(words[i],"<") == 0 && words[i+1] != NULL){
+                    inRedirect = 1;
+                }
+                if(strcmp(words[i],"|") == 0 && words[i+1] != NULL){
+                    pipe = 1;
+                }
+                if(strcmp(words[i],"&") == 0 && words[i+1] != NULL){
+                    ampersand = 1;
+                }
+                printf("%s ", words[i++]);
+            }
+            printf("\n\n");
+
+            int pid = fork();
+
+            if(pid == 0){
+                if(ampersand==1){
+
+                }
+                else{
+                    execvp(words[0], words);
+                }
+            }
+            else{
+                //printf("I'm the parent - %ld\n", pid, i);
+                //fflush(stdout);
+                int returnStatus;    
+                waitpid(0, &returnStatus, 0);
+
+            }
+        }
+        // if(EOF == -1){
+        //     return 0;
+        // }
     }
-    printf("\n\n");
-
-    int pid = fork();
-    
-    if(pid == 0){
-      execvp(words[0], words);
-    }
-    else{
-    }
-  }
-  printf( "Will this get printed? No.\n" );
-  return 0;
-}
-
-
-
-
   // execute command in words[0] with arguments in array words
   // by convention first argument is command itself, last argument must be NULL
   //execvp(words[0], words);
  
   // execvp replaces current process so should never get here!
- 
+  //printf( "Will this get printed? No.\n" );
+   return 0;
+}
 
 /* 
  * reads a single line from terminal and parses it into an array of tokens/words by 

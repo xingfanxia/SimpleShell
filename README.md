@@ -7,7 +7,7 @@
       process to finish before looping to read the next line of input.
 
 
-- [ ] Add some processing of the array of tokens to determine which of the operators may be present
+- [x] Add some processing of the array of tokens to determine which of the operators may be present
       (<, >, |, &)
 
 - [ ] Handle waiting vs. not waiting based on the &, and make sure you remove the & from the array
