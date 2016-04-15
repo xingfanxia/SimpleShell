@@ -10,6 +10,8 @@
 #include    <string.h>
 #include    <sys/types.h>
 #include    <sys/wait.h>
+#include    <fcntl.h>
+#include    <errno.h>
 
 
 char** readLineOfWords();
@@ -20,81 +22,125 @@ int main()
     //printf(EOF);
     int c;
   
-while (1)
-{
-        printf("\nenter a shell command (e.g. ls): ");
+  while (1)
+  {
+    printf("\nenter a shell command (e.g. ls): ");
 
-        fflush(stdout);
-        char** words = readLineOfWords();
-        int invalidEntry = 0;
-        int j = 0;
-        while(words[j] != NULL){
-            // if(words[j] == "-1"){
-            //     EOF = -1;
-            //     break;
-            // }
-            for(int k = 0; k < strlen(words[j]); k++){
-                int ascii = words[j][k];
-                if(!((ascii>=65 && ascii<=90) || (ascii>=97 && ascii<=122) || ascii==95 || (ascii>=45 && ascii<=57))){
-                    //printf("Invalid Entry");
-                    invalidEntry = 1;
-                    break;
-                }
-            }
-            if(invalidEntry==1){
-                printf("\nInvalid entry. Please try again.\n");
+    fflush(stdout);
+    char** words = readLineOfWords();
+    int invalidEntry = 0;
+    int j = 0;
+    while(words[j] != NULL){
+        // if(words[j] == "-1"){
+        //     EOF = -1;
+        //     break;
+        // }
+        for(int k = 0; k < strlen(words[j]); k++){
+            int ascii = words[j][k];
+            if(!((ascii>=65 && ascii<=90) || !(ascii>=97 && ascii<=122) || !(ascii==95) || !(ascii>=45 && ascii<=57))){
+                //printf("Invalid Entry");
+                invalidEntry = 1;
                 break;
             }
-            j++;
         }
-        if(invalidEntry==0){
-            int outRedirect=0;
-            int inRedirect=0;
-            int pipe = 0;
-            int ampersand = 0;
-
-            // prints the tokens in the array separated by spaces
-            int i=0; 
-            printf("\nyou entered: ");
-            while (words[i] != NULL) {
-                if(strcmp(words[i],">") == 0 && words[i+1] != NULL){
-                    outRedirect = 1;
-                }
-                if(strcmp(words[i],"<") == 0 && words[i+1] != NULL){
-                    inRedirect = 1;
-                }
-                if(strcmp(words[i],"|") == 0 && words[i+1] != NULL){
-                    pipe = 1;
-                }
-                if(strcmp(words[i],"&") == 0 && words[i+1] != NULL){
-                    ampersand = 1;
-                }
-                printf("%s ", words[i++]);
-            }
-            printf("\n\n");
-
-            int pid = fork();
-
-            if(pid == 0){
-                if(ampersand==1){
-
-                }
-                else{
-                    execvp(words[0], words);
-                }
-            }
-            else{
-                //printf("I'm the parent - %ld\n", pid, i);
-                //fflush(stdout);
-                int returnStatus;    
-                waitpid(0, &returnStatus, 0);
-
-            }
+        if(invalidEntry==1){
+            printf("\nInvalid entry. Please try again.\n");
+            break;
         }
-        // if(EOF == -1){
-        //     return 0;
-        // }
+        j++;
     }
+
+    int pid = fork();
+
+    if(pid == 0){
+
+        {// io outredirection support
+            int i = 0;
+            while(words[i] != NULL){
+                char *current_token = words[i];
+                if (strcmp(current_token, ">") == 0){
+                    words[i] = NULL; // single command support
+
+                    char *file = words[i+1];
+                    if (file == NULL) break;
+
+                    int fd = open(file, O_RDWR | O_CREAT, 0x755);
+                    if (fd == -1){
+                        printf("%d\n", fd);
+                        printf("%s\n", strerror(errno));
+                        break;
+                    }
+                    dup2(fd, STDOUT_FILENO);
+                    break;
+                }
+                i++;
+            }
+        }
+
+        {// io inredirection support
+            int i = 0;
+            while(words[i] != NULL){
+                char *current_token = words[i];
+                if (strcmp(current_token, "<") == 0){
+                    words[i] = NULL; // single command support
+
+                    char *file = words[i+1];
+                    if (file == NULL) break;
+
+                    int fd = open(file, O_RDWR | O_CREAT, 0x755);
+                    if (fd == -1){
+                        printf("%d\n", fd);
+                        printf("%s\n", strerror(errno));
+                        break;
+                    }
+                    dup2(fd, STDOUT_FILENO);
+                    break;
+                }
+                i++;
+            }
+        }
+
+        {// pipe
+            int i = 0;
+            while(words[i] != NULL){
+                char *current_token = words[i];
+                if (strcmp(current_token, "|") == 0){
+                    words[i] = NULL; 
+
+                    char ** arg1 = &words[i+1];
+
+                    int fds[2];
+                    if (pipe(fds) == -1) break;
+
+                    pid_t pid = fork();
+                    if (pid == -1) break;
+                    if (pid == 0){
+                        close(fds[1]);
+                        dup2(fds[0], STDIN_FILENO);
+                        execvp(arg1[0], arg1);
+                    }else{
+                        close(fds[0]);
+                        dup2(fds[1], STDOUT_FILENO);
+                    }
+                    break;
+                }
+                i++;
+            }
+        }
+        execvp(words[0], words);
+    }
+    else{
+        //printf("I'm the parent - %ld\n", pid, i);
+        //fflush(stdout);
+        int returnStatus;    
+        waitpid(-1, &returnStatus, 0);
+
+    }
+  }
+          // if(EOF == -1){
+          //     return 0;
+          // }
+  
   // execute command in words[0] with arguments in array words
   // by convention first argument is command itself, last argument must be NULL
   //execvp(words[0], words);
