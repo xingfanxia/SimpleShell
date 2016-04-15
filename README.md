@@ -13,10 +13,10 @@
 - [ ] Handle waiting vs. not waiting based on the &, and make sure you remove the & from the array
       before calling exec.
 
-- [ ] To support I/O redirection, modify the child process created by fork() by adding some code to
+- [x] To support I/O redirection, modify the child process created by fork() by adding some code to
       open the input and output files specified on the command line. This should be done using the open() system call. Next, use the dup2() system call to replace the standard input or standard output streams with the appropriate file that was just opened. Finally, call execvp() to run the program after removing the redirect tokens from the array.
 
-- [ ] Pipes are a little trickier: you will need to call a fork/exec for each command on the line. Then you should use the pipe() system call to create a pair of pipe file descriptors before calling fork(). After the fork both processes will have access to both sides of the pipe. The reading process should immediately close the write file descriptor, and the writing process should immediately close the read file descriptor. At this point each process uses dup2() to copy the remaining pipe descriptor over STDIN or STDOUT as appropriate.
+- [x] Pipes are a little trickier: you will need to call a fork/exec for each command on the line. Then you should use the pipe() system call to create a pair of pipe file descriptors before calling fork(). After the fork both processes will have access to both sides of the pipe. The reading process should immediately close the write file descriptor, and the writing process should immediately close the read file descriptor. At this point each process uses dup2() to copy the remaining pipe descriptor over STDIN or STDOUT as appropriate.
 
 ### Sherri's words:
 - When you are done, bask in the glory of a working shell! You should now have a good operational understanding of the user-mode side of some of the most important UNIX system calls.

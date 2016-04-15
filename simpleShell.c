@@ -25,6 +25,7 @@ int main()
   while (1)
   {
     printf("\nenter a shell command (e.g. ls): ");
+    printf("\n> ");
 
     fflush(stdout);
     char** words = readLineOfWords();
@@ -50,93 +51,110 @@ int main()
         j++;
     }
 
-    int pid = fork();
 
-    if(pid == 0){
+    if(invalidEntry==0){
+	    int pid = fork();
 
-        {// io outredirection support
-            int i = 0;
-            while(words[i] != NULL){
-                char *current_token = words[i];
-                if (strcmp(current_token, ">") == 0){
-                    words[i] = NULL; // single command support
+	    if(pid == 0){
 
-                    char *file = words[i+1];
-                    if (file == NULL) break;
+	        {// io outredirection support
+	            int i = 0;
+	            while(words[i] != NULL){
+	                char *current_token = words[i];
+	                if (strcmp(current_token, ">") == 0){
+	                    words[i] = NULL; // single command support
 
-                    int fd = open(file, O_RDWR | O_CREAT, 0x755);
-                    if (fd == -1){
-                        printf("%d\n", fd);
-                        printf("%s\n", strerror(errno));
-                        break;
-                    }
-                    dup2(fd, STDOUT_FILENO);
-                    break;
-                }
-                i++;
-            }
-        }
+	                    char *file = words[i+1];
+	                    if (file == NULL) break;
 
-        {// io inredirection support
-            int i = 0;
-            while(words[i] != NULL){
-                char *current_token = words[i];
-                if (strcmp(current_token, "<") == 0){
-                    words[i] = NULL; // single command support
+	                    int fd = open(file, O_RDWR | O_CREAT, 0x755);
+	                    if (fd == -1){
+	                        printf("%d\n", fd);
+	                        printf("%s\n", strerror(errno));
+	                        break;
+	                    }
+	                    dup2(fd, STDOUT_FILENO);
+	                    break;
+	                }
+	                i++;
+	            }
+	        }
 
-                    char *file = words[i+1];
-                    if (file == NULL) break;
+	        {// io inredirection support
+	            int i = 0;
+	            while(words[i] != NULL){
+	                char *current_token = words[i];
+	                if (strcmp(current_token, "<") == 0){
+	                    words[i] = NULL; // single command support
 
-                    int fd = open(file, O_RDWR | O_CREAT, 0x755);
-                    if (fd == -1){
-                        printf("%d\n", fd);
-                        printf("%s\n", strerror(errno));
-                        break;
-                    }
-                    dup2(fd, STDOUT_FILENO);
-                    break;
-                }
-                i++;
-            }
-        }
+	                    char *file = words[i+1];
+	                    if (file == NULL) break;
 
-        {// pipe
-            int i = 0;
-            while(words[i] != NULL){
-                char *current_token = words[i];
-                if (strcmp(current_token, "|") == 0){
-                    words[i] = NULL; 
+	                    int fd = open(file, O_RDWR | O_CREAT, 0x755);
+	                    if (fd == -1){
+	                        printf("%d\n", fd);
+	                        printf("%s\n", strerror(errno));
+	                        break;
+	                    }
+	                    dup2(fd, 0);
+	                    break;
+	                }
+	                i++;
+	            }
+	        }
 
-                    char ** arg1 = &words[i+1];
+	        {// pipe
+	            int i = 0;
+	            while(words[i] != NULL){
+	                char *current_token = words[i];
+	                if (strcmp(current_token, "|") == 0){
+	                    words[i] = NULL; 
 
-                    int fds[2];
-                    if (pipe(fds) == -1) break;
+	                    char ** arg1 = &words[i+1];
 
-                    pid_t pid = fork();
-                    if (pid == -1) break;
-                    if (pid == 0){
-                        close(fds[1]);
-                        dup2(fds[0], STDIN_FILENO);
-                        execvp(arg1[0], arg1);
-                    }else{
-                        close(fds[0]);
-                        dup2(fds[1], STDOUT_FILENO);
-                    }
-                    break;
-                }
-                i++;
-            }
-        }
-        execvp(words[0], words);
-    }
-    else{
-        //printf("I'm the parent - %ld\n", pid, i);
-        //fflush(stdout);
-        int returnStatus;    
-        waitpid(-1, &returnStatus, 0);
+	                    int fds[2];
+	                    if (pipe(fds) == -1) break;
 
-    }
-  }
+	                    pid_t pid = fork();
+	                    if (pid == -1) break;
+	                    if (pid == 0){
+	                        close(fds[1]);
+	                        dup2(fds[0], STDIN_FILENO);
+	                        execvp(arg1[0], arg1);
+	                    }else{
+	                        close(fds[0]);
+	                        dup2(fds[1], STDOUT_FILENO);
+	                    }
+	                    break;
+	                }
+	                i++;
+	            }
+	        }
+
+	        
+	     //    //currently not working
+	     //    {//ampersand 
+		    // 	int i = 0;
+		    //         while(words[i] != NULL){
+		    //             char *current_token = words[i];
+		    //             if (strcmp(current_token, "&") == 0){
+		    //                 break;
+		    //             }
+		    //         i++;
+		    //         }  
+	    	// }
+
+	        execvp(words[0], words);
+	    }
+	    else{
+	        //printf("I'm the parent - %ld\n", pid, i);
+	        //fflush(stdout);
+	        int returnStatus;    
+	        waitpid(-1, &returnStatus, 0);
+
+	    }
+	  }
+	}
           // if(EOF == -1){
           //     return 0;
           // }
