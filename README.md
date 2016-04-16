@@ -2,8 +2,9 @@
 
 ### Note:
 
-1. Working version adopts Aman's codes for multiple redirection problem.
-2. Working version is working but it has many redundant codes.
+1. The `simpleShell_Working.c` is the current version.
+2. `simpleShell_Working.c` adopts Aman's codes for multiple redirection problem.
+3. `simpleShell_Working.c` is working but it has many redundant codes.
 
 ### TO DOs:
 
