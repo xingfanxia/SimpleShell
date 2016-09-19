@@ -16,6 +16,7 @@
 #include    <string.h>
 #include    <sys/types.h>
 #include    <sys/wait.h>
+#include    <errno.h>
 
 // Function declaration
 char** readLineOfWords();
@@ -187,6 +188,11 @@ int main()
                         //Source: http://www.programiz.com/c-programming/examples/read-file
                         FILE * fPointer;
                         fPointer = fopen(words[fileIndex], "r");
+                        if (fPointer == -1){
+                            printf("%d\n", fPointer);
+                            printf("%s\n", strerror(errno));
+                            break;
+                        }
                         int line = 0;
                         char fileContents[512];
                         while(fgets(fileContents, 512, fPointer)){
